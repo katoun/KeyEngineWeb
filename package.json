@@ -1,0 +1,24 @@
+{
+  "name": "keyengine",
+  "version": "0.0.1",
+  "description": "Key Engine",
+  "author": "Catalin-Alexandru Nastase",
+  "license": "MIT",
+  "main": "compiled/Main.js",
+  "devDependencies": {
+    "cpx": "^1.5.0",
+    "electron": "^7.1.7",
+    "electron-builder": "^21.2.0",
+    "typescript": "^3.7.4"
+  },
+  "scripts": {
+    "postinstall": "electron-builder install-app-deps",
+    "start": "electron ./compiled/Main.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "compile": "tsc && cpx src/index.html compiled"
+  },
+  "build": {
+    "appId": "com.github.katoun.keyengine"
+  }
+}
