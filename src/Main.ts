@@ -1,59 +1,60 @@
-import { app, BrowserWindow } from "electron";
+import { app, ipcMain, nativeImage, BrowserWindow, screen } from "electron";
 import * as path from "path";
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let mainWindow: Electron.BrowserWindow;
-
-function createWindow()
+function windowBounds(): Electron.Rectangle
 {
-	// Create the browser window.
-	mainWindow = new BrowserWindow({
-		width: 800,
-		height: 600,
-		webPreferences: {
-			nodeIntegration: true
-		}
-	});
+	const workAreaSize = screen.getPrimaryDisplay().workAreaSize;
 
-	// and load the index.html of the app.
-	mainWindow.loadFile(path.join(__dirname, "index.html"));
-
-	// Open the DevTools.
-	mainWindow.webContents.openDevTools();
-
-	// Emitted when the window is closed.
-	mainWindow.on('closed', () =>
-	{
-		// Dereference the window object, usually you would store windows
-		// in an array if your app supports multi windows, this is the time
-		// when you should delete the corresponding element.
-		mainWindow = null;
-	});
+	return {
+		width: workAreaSize.width,
+		height: workAreaSize.height,
+		x: 0,
+		y: 0,
+	};
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
-
-// Quit when all windows are closed.
-app.on("window-all-closed", () =>
+app.on("ready", () =>
 {
-	// On macOS it is common for applications and their menu bar
-	// to stay active until the user quits explicitly with Cmd + Q
-	if (process.platform !== "darwin")
+	const bounds = windowBounds();
+	let options: Electron.BrowserWindowConstructorOptions = {
+		titleBarStyle: "hidden",
+		resizable: true,
+		minWidth: 800,
+		minHeight: 600,
+		width: bounds.width,
+		height: bounds.height,
+		x: bounds.x,
+		y: bounds.y,
+		show: false,
+		webPreferences: {
+			nodeIntegration: true,
+			experimentalFeatures: true
+		}
+	};
+
+	const window = new BrowserWindow(options);
+
+	if (app.dock)
 	{
-		app.quit();
+		app.dock.setIcon(nativeImage.createFromPath("build/icon.png"));
 	}
+	else
+	{
+		window.setIcon(nativeImage.createFromPath("build/icon.png"));
+	}
+
+	//window.setMenuBarVisibility(false);
+	window.loadFile(path.join(__dirname, "index.html"));
+
+	window.webContents.on("did-finish-load", () =>
+	{
+		window.show();
+		window.focus();
+	});
+
+	app.on("open-file", (_event, file) => window.webContents.send("change-working-directory", file));
 });
 
-app.on("activate", () =>
-{
-	// On macOS it's common to re-create a window in the app when the
-	// dock icon is clicked and there are no other windows open.
-	if (mainWindow === null)
-	{
-		createWindow();
-	}
-});
+
+app.on("window-all-closed", () => app.quit());
+ipcMain.on("quit", app.quit);
